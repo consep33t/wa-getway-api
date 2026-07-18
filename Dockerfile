@@ -30,8 +30,8 @@ WORKDIR /usr/src/app
 # RUN: Pastikan Anda telah menjalankan 'npm init' sebelum melakukan docker-compose build
 COPY package*.json ./
 
-# Install dependencies production saja
-# RUN npm install --production
+# Install dependencies
+RUN npm install
 
 # Copy sisa source code
 COPY . .
