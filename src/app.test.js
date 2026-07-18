@@ -33,7 +33,7 @@ describe('App Shell & Health Check', () => {
 
       expect(res.statusCode).toEqual(202);
       expect(res.body.status).toBe('queued');
-      expect(queue.enqueueMessage).toHaveBeenCalledWith('62812345@c.us', 'Test message');
+      expect(queue.enqueueMessage).toHaveBeenCalledWith('62812345@c.us', 'Test message', undefined);
     });
 
     it('should return 400 if number is missing', async () => {

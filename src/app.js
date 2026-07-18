@@ -37,7 +37,7 @@ app.get('/health', (req, res) => {
 
 // Send message endpoint
 app.post('/send-message', (req, res) => {
-  const { number, message } = req.body;
+  const { number, message, mediaUrl } = req.body;
 
   if (!number || !message) {
     return res.status(400).json({ error: 'number and message are required' });
@@ -48,12 +48,13 @@ app.post('/send-message', (req, res) => {
     return res.status(400).json({ error: 'invalid number format' });
   }
 
-  enqueueMessage(formattedNumber, message);
+  enqueueMessage(formattedNumber, message, mediaUrl);
 
   res.status(202).json({
     status: 'queued',
     message: 'Message has been added to the queue for delivery',
-    to: formattedNumber
+    to: formattedNumber,
+    hasMedia: !!mediaUrl
   });
 });
 
