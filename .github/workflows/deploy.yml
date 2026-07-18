@@ -25,10 +25,10 @@ jobs:
           git reset --hard origin/production
           
           # 3. Build ulang image dan jalankan kontainer secara background
-          #    (Script ini menyesuaikan dengan set up docker-compose yang sudah kita buat)
-          docker-compose build
-          docker-compose down
-          docker-compose up -d
+          #    (Script ini menyesuaikan dengan set up docker compose yang sudah kita buat)
+          docker compose build
+          docker compose down
+          docker compose up -d
           
           # *Catatan: Jika sewaktu-waktu beralih menggunakan PM2 langsung di host OS, hapus baris docker di atas dan gunakan baris di bawah:
           # npm ci --production
