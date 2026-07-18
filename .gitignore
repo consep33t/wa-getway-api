@@ -27,3 +27,7 @@ dist/
 build/
 .DS_Store
 .agent/scratch/
+.agent/
+INIT-AI.md
+CHANGELOG.md
+TODO.md
