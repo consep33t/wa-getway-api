@@ -1,0 +1,35 @@
+name: Production Auto Deployment
+
+on:
+  push:
+    branches: [ "production" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Executing Remote SSH Commands for Deployment
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USERNAME }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        port: ${{ secrets.SERVER_PORT || '22' }}
+        script: |
+          # 1. Pindah ke direktori proyek (Ubah /path/to/project sesuai lokasi di server)
+          cd /path/to/your/project/wa-gateway-api
+          
+          # 2. Ambil update terbaru dari GitHub
+          git fetch origin
+          git reset --hard origin/production
+          
+          # 3. Build ulang image dan jalankan kontainer secara background
+          #    (Script ini menyesuaikan dengan set up docker-compose yang sudah kita buat)
+          docker-compose build
+          docker-compose down
+          docker-compose up -d
+          
+          # *Catatan: Jika sewaktu-waktu beralih menggunakan PM2 langsung di host OS, hapus baris docker di atas dan gunakan baris di bawah:
+          # npm ci --production
+          # pm2 reload wa-gateway-api
