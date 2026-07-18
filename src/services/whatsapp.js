@@ -13,6 +13,10 @@ const initializeClient = () => {
     puppeteer: {
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
       protocolTimeout: 300000,
+    },
+    webVersionCache: {
+      type: 'remote',
+      remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
     }
   });
 
@@ -24,6 +28,17 @@ const initializeClient = () => {
   client.on('ready', () => {
     isReady = true;
     logger.info('WhatsApp Client is ready!');
+  });
+
+  // Fallback if ready event doesn't fire due to whatsapp-web.js bugs
+  client.on('authenticated', () => {
+    logger.info('WhatsApp Client authenticated');
+    setTimeout(() => {
+      if (!isReady) {
+        logger.warn('Ready event did not fire after 15s. Forcing isReady = true');
+        isReady = true;
+      }
+    }, 15000);
   });
 
   client.on('message', async (msg) => {
@@ -46,9 +61,7 @@ const initializeClient = () => {
     }
   });
 
-  client.on('authenticated', () => {
-    logger.info('WhatsApp Client authenticated');
-  });
+
 
   client.on('auth_failure', (msg) => {
     logger.error('WhatsApp Authentication failure', { message: msg });
