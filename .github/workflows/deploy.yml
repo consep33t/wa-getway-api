@@ -18,7 +18,7 @@ jobs:
         port: ${{ secrets.SERVER_PORT || '22' }}
         script: |
           # 1. Pindah ke direktori proyek (Ubah /path/to/project sesuai lokasi di server)
-          cd /path/to/your/project/wa-gateway-api
+          cd ~/wa-gateway-api
           
           # 2. Ambil update terbaru dari GitHub
           git fetch origin
