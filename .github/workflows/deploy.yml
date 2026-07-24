@@ -9,6 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Notify Discord (Start)
+      run: |
+        curl -H "Content-Type: application/json" -d '{"content": "⏳ **Deployment Started** to Production (`alfa@alfanet`)..."}' ${{ secrets.DISCORD_WEBHOOK_URL }}
+
     - name: Executing Remote SSH Commands for Deployment
       uses: appleboy/ssh-action@v1.0.3
       env:
@@ -20,27 +24,25 @@ jobs:
         port: ${{ secrets.SERVER_PORT || '22' }}
         envs: DISCORD_WEBHOOK_URL
         script: |
-          # 1. Pindah ke direktori proyek (Ubah /path/to/project sesuai lokasi di server)
+          set -e
+          
           cd ~/wa-gateway-api
           
-          # 2. Ambil update terbaru dari GitHub
           git fetch origin
           git reset --hard origin/production
           
-          # 3. Build ulang image dan jalankan kontainer secara background
-          #    (Script ini menyesuaikan dengan set up docker compose yang sudah kita buat)
           docker compose build > build.log 2>&1
           docker compose down
           docker compose up -d
           
-          # 4. Kirim notifikasi sukses dan cuplikan log ke Discord
           LOG_SNIPPET=$(tail -n 15 build.log)
           PAYLOAD=$(jq -n --arg content "✅ **Deployment Berhasil ke Production (alfa@alfanet)**
-          \`\`\`
+          \`\`\`text
           $LOG_SNIPPET
           \`\`\`" '{content: $content}')
           curl -H "Content-Type: application/json" -d "$PAYLOAD" "$DISCORD_WEBHOOK_URL"
-          
-          # *Catatan: Jika sewaktu-waktu beralih menggunakan PM2 langsung di host OS, hapus baris docker di atas dan gunakan baris di bawah:
-          # npm ci --production
-          # pm2 reload wa-gateway-api
+
+    - name: Notify Discord (Error)
+      if: failure()
+      run: |
+        curl -H "Content-Type: application/json" -d '{"content": "❌ **Deployment Failed!** Terdapat error saat deployment ke `alfa@alfanet`. Silakan cek log di GitHub Actions."}' ${{ secrets.DISCORD_WEBHOOK_URL }}
