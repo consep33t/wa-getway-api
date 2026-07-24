@@ -17,6 +17,10 @@ jest.mock('qrcode-terminal', () => ({
   generate: jest.fn()
 }));
 
+jest.mock('qrcode', () => ({
+  toDataURL: jest.fn().mockResolvedValue('data:image/png;base64,xxx')
+}));
+
 jest.mock('../utils/logger', () => ({
   info: jest.fn(),
   error: jest.fn(),
@@ -39,6 +43,6 @@ describe('WhatsApp Service', () => {
     expect(client.on).toHaveBeenCalledWith('disconnected', expect.any(Function));
     expect(client.on).toHaveBeenCalledWith('auth_failure', expect.any(Function));
     
-    expect(getStatus()).toBe(false); // not ready initially
+    expect(getStatus()).toBe('INITIALIZING'); // not ready initially
   });
 });

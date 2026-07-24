@@ -11,6 +11,10 @@ Proyek ini adalah API Gateway untuk WhatsApp, dikembangkan menggunakan Node.js d
 - **Webhook**: Menangani pesan masuk dengan strategi *reply-first*.
 - **Deployment & CI/CD**: Terisolasi dalam kontainer Docker dan memiliki pipeline otomatis menggunakan GitHub Actions.
 
+## Dokumentasi Frontend & API
+Panduan lengkap untuk integrasi Frontend (termasuk scan QR Real-time, Manajemen Sesi, dan pengiriman pesan) dapat dibaca di:
+👉 **[Dokumentasi Integrasi Frontend API](docs/FRONTEND_INTEGRATION.md)**
+
 ## Menjalankan Proyek Secara Lokal
 
 1. **Clone dan Install**:

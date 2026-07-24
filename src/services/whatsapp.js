@@ -1,9 +1,20 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
+const qrcodeTerminal = require('qrcode-terminal');
+const qrcode = require('qrcode');
+const { EventEmitter } = require('events');
 const logger = require('../utils/logger');
 
+const sessionEvents = new EventEmitter();
+
 let client;
-let isReady = false;
+let currentStatus = 'INITIALIZING';
+let currentQR = null;
+let qrGeneratedAt = null;
+
+const updateStatus = (status) => {
+  currentStatus = status;
+  sessionEvents.emit('status_changed', status);
+};
 
 const initializeClient = () => {
   logger.info('Initializing WhatsApp Client...');
@@ -16,23 +27,35 @@ const initializeClient = () => {
     }
   });
 
-  client.on('qr', (qr) => {
+  client.on('qr', async (qr) => {
     logger.info('QR Code received, please scan:');
-    qrcode.generate(qr, { small: true });
+    qrcodeTerminal.generate(qr, { small: true });
+    
+    try {
+      currentQR = await qrcode.toDataURL(qr);
+      qrGeneratedAt = new Date().toISOString();
+      updateStatus('QR_READY');
+      sessionEvents.emit('qr_updated', { qr: currentQR, generatedAt: qrGeneratedAt });
+    } catch (err) {
+      logger.error('Failed to generate base64 QR', { error: err.message });
+    }
   });
 
   client.on('ready', () => {
-    isReady = true;
+    updateStatus('CONNECTED');
+    currentQR = null;
+    qrGeneratedAt = null;
     logger.info('WhatsApp Client is ready!');
   });
 
   // Fallback if ready event doesn't fire due to whatsapp-web.js bugs
   client.on('authenticated', () => {
+    updateStatus('AUTHENTICATED');
     logger.info('WhatsApp Client authenticated');
     setTimeout(() => {
-      if (!isReady) {
-        logger.warn('Ready event did not fire after 15s. Forcing isReady = true');
-        isReady = true;
+      if (currentStatus !== 'CONNECTED') {
+        logger.warn('Ready event did not fire after 15s. Forcing CONNECTED');
+        updateStatus('CONNECTED');
       }
     }, 15000);
   });
@@ -66,7 +89,20 @@ const initializeClient = () => {
 
   client.on('disconnected', (reason) => {
     logger.error('WhatsApp Client disconnected', { reason });
-    isReady = false;
+    updateStatus('DISCONNECTED');
+    
+    if (reason === 'LOGOUT') {
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const sessionDir = path.join(process.cwd(), 'sessions');
+        fs.rmSync(sessionDir, { recursive: true, force: true });
+        logger.info('Cleaned up session folder due to LOGOUT');
+      } catch (err) {
+        logger.error('Failed to clean session folder', { error: err.message });
+      }
+    }
+    
     restartClient();
   });
 
@@ -90,10 +126,38 @@ const restartClient = () => {
 };
 
 const getClient = () => client;
-const getStatus = () => isReady;
+const getStatus = () => currentStatus;
+const getQRState = () => ({ qr: currentQR, generatedAt: qrGeneratedAt });
+
+const logoutClient = async () => {
+  if (client) {
+    try {
+      await client.logout();
+    } catch (err) {
+      logger.error('Error logging out gracefully', { error: err.message });
+    } finally {
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const sessionDir = path.join(process.cwd(), 'sessions');
+        fs.rmSync(sessionDir, { recursive: true, force: true });
+      } catch (e) {}
+      updateStatus('DISCONNECTED');
+      restartClient();
+    }
+  }
+};
+
+const refreshClient = () => {
+  restartClient();
+};
 
 module.exports = {
   initializeClient,
   getClient,
-  getStatus
+  getStatus,
+  getQRState,
+  logoutClient,
+  refreshClient,
+  sessionEvents
 };
