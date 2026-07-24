@@ -12,34 +12,36 @@ jobs:
     - name: Set environment variables
       id: vars
       run: |
-        echo "SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_ENV
-        # Format the commit string: message (sha) by author
-        COMMIT_MSG=$(jq -Rs '.' <<< "${{ github.event.head_commit.message }}")
-        echo "COMMIT_STR=${COMMIT_MSG:1:-1} (${SHORT_SHA}) by ${{ github.actor }}" >> $GITHUB_ENV
+        echo "SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
         echo "START_TIME=$(TZ='Asia/Jakarta' date +'%H:%M WIB %d/%m/%Y')" >> $GITHUB_ENV
         echo "START_TS=$(date +%s)" >> $GITHUB_ENV
 
     - name: Notify Discord (Start)
+      env:
+        COMMIT_MSG: ${{ github.event.head_commit.message }}
       run: |
-        PAYLOAD=$(jq -n \
+        jq -n \
           --arg title "🚀 Backend Auto-Deploy Started!" \
-          --arg desc "Status: 🏗️ Building and recreating container...\nTime: ${{ env.START_TIME }}" \
+          --arg status "🏗️ Building and recreating container..." \
+          --arg time "${{ env.START_TIME }}" \
           --arg container "wa-gateway-api" \
           --arg branch "production" \
-          --arg commit "${{ env.COMMIT_STR }}" \
+          --arg msg "$COMMIT_MSG" \
+          --arg sha "${{ env.SHORT_SHA }}" \
+          --arg actor "${{ github.actor }}" \
           '{
             embeds: [{
               title: $title,
-              description: $desc,
+              description: ("Status: " + $status + "\nTime: " + $time),
               color: 16753920,
               fields: [
                 { name: "Container", value: $container, inline: true },
                 { name: "Branch", value: $branch, inline: true },
-                { name: "Commit", value: $commit, inline: false }
+                { name: "Commit", value: ($msg + " (" + $sha + ") by " + $actor), inline: false }
               ]
             }]
-          }')
-        curl -H "Content-Type: application/json" -d "$PAYLOAD" ${{ secrets.DISCORD_WEBHOOK_URL }}
+          }' > payload.json
+        curl -H "Content-Type: application/json" -d @payload.json ${{ secrets.DISCORD_WEBHOOK_URL }}
 
     - name: Executing Remote SSH Commands for Deployment
       id: ssh-deploy
@@ -60,54 +62,66 @@ jobs:
 
     - name: Notify Discord (Success)
       if: success()
+      env:
+        COMMIT_MSG: ${{ github.event.head_commit.message }}
       run: |
         END_TIME=$(TZ='Asia/Jakarta' date +'%H:%M WIB %d/%m/%Y')
         END_TS=$(date +%s)
         DURATION=$((END_TS - START_TS))
         
-        PAYLOAD=$(jq -n \
+        jq -n \
           --arg title "✅ Backend Auto-Deploy Successful!" \
-          --arg desc "Status: ✨ Service is now running perfectly!\nFinished: $END_TIME\nDuration: ${DURATION}s" \
+          --arg status "✨ Service is now running perfectly!" \
+          --arg time "$END_TIME" \
+          --arg dur "${DURATION}s" \
           --arg container "wa-gateway-api" \
           --arg branch "production" \
-          --arg commit "${{ env.COMMIT_STR }}" \
+          --arg msg "$COMMIT_MSG" \
+          --arg sha "${{ env.SHORT_SHA }}" \
+          --arg actor "${{ github.actor }}" \
           '{
             embeds: [{
               title: $title,
-              description: $desc,
+              description: ("Status: " + $status + "\nFinished: " + $time + "\nDuration: " + $dur),
               color: 65280,
               fields: [
                 { name: "Container", value: $container, inline: true },
                 { name: "Branch", value: $branch, inline: true },
-                { name: "Commit", value: $commit, inline: false }
+                { name: "Commit", value: ($msg + " (" + $sha + ") by " + $actor), inline: false }
               ]
             }]
-          }')
-        curl -H "Content-Type: application/json" -d "$PAYLOAD" ${{ secrets.DISCORD_WEBHOOK_URL }}
+          }' > payload.json
+        curl -H "Content-Type: application/json" -d @payload.json ${{ secrets.DISCORD_WEBHOOK_URL }}
 
     - name: Notify Discord (Error)
       if: failure()
+      env:
+        COMMIT_MSG: ${{ github.event.head_commit.message }}
       run: |
         END_TIME=$(TZ='Asia/Jakarta' date +'%H:%M WIB %d/%m/%Y')
         END_TS=$(date +%s)
         DURATION=$((END_TS - START_TS))
         
-        PAYLOAD=$(jq -n \
+        jq -n \
           --arg title "❌ Backend Auto-Deploy Failed!" \
-          --arg desc "Status: ⚠️ Terdapat error saat deployment ke server.\nFinished: $END_TIME\nDuration: ${DURATION}s" \
+          --arg status "⚠️ Terdapat error saat deployment ke server." \
+          --arg time "$END_TIME" \
+          --arg dur "${DURATION}s" \
           --arg container "wa-gateway-api" \
           --arg branch "production" \
-          --arg commit "${{ env.COMMIT_STR }}" \
+          --arg msg "$COMMIT_MSG" \
+          --arg sha "${{ env.SHORT_SHA }}" \
+          --arg actor "${{ github.actor }}" \
           '{
             embeds: [{
               title: $title,
-              description: $desc,
+              description: ("Status: " + $status + "\nFinished: " + $time + "\nDuration: " + $dur),
               color: 16711680,
               fields: [
                 { name: "Container", value: $container, inline: true },
                 { name: "Branch", value: $branch, inline: true },
-                { name: "Commit", value: $commit, inline: false }
+                { name: "Commit", value: ($msg + " (" + $sha + ") by " + $actor), inline: false }
               ]
             }]
-          }')
-        curl -H "Content-Type: application/json" -d "$PAYLOAD" ${{ secrets.DISCORD_WEBHOOK_URL }}
+          }' > payload.json
+        curl -H "Content-Type: application/json" -d @payload.json ${{ secrets.DISCORD_WEBHOOK_URL }}
