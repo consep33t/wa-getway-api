@@ -15,19 +15,21 @@ jobs:
         echo "SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
         echo "START_TIME=$(TZ='Asia/Jakarta' date +'%H:%M WIB %d/%m/%Y')" >> $GITHUB_ENV
         echo "START_TS=$(date +%s)" >> $GITHUB_ENV
+        
+        # Ambil hanya baris pertama (judul) dari commit message
+        COMMIT_TITLE=$(jq -r '.head_commit.message | split("\n")[0]' "$GITHUB_EVENT_PATH")
+        echo "COMMIT_TITLE=$COMMIT_TITLE" >> $GITHUB_ENV
 
     - name: Notify Discord (Start)
-      env:
-        COMMIT_MSG: ${{ github.event.head_commit.message }}
       run: |
         jq -n \
           --arg title "🚀 Backend Auto-Deploy Started!" \
           --arg status "🏗️ Building and recreating container..." \
-          --arg time "${{ env.START_TIME }}" \
+          --arg time "$START_TIME" \
           --arg container "wa-gateway-api" \
           --arg branch "production" \
-          --arg msg "$COMMIT_MSG" \
-          --arg sha "${{ env.SHORT_SHA }}" \
+          --arg msg "$COMMIT_TITLE" \
+          --arg sha "$SHORT_SHA" \
           --arg actor "${{ github.actor }}" \
           '{
             embeds: [{
@@ -53,7 +55,7 @@ jobs:
         port: ${{ secrets.SERVER_PORT || '22' }}
         script: |
           set -e
-          cd ~/wa-gateway-api
+          cd /home/${{ secrets.SERVER_USERNAME }}/wa-gateway-api
           git fetch origin
           git reset --hard origin/production
           docker compose build
@@ -62,8 +64,6 @@ jobs:
 
     - name: Notify Discord (Success)
       if: success()
-      env:
-        COMMIT_MSG: ${{ github.event.head_commit.message }}
       run: |
         END_TIME=$(TZ='Asia/Jakarta' date +'%H:%M WIB %d/%m/%Y')
         END_TS=$(date +%s)
@@ -76,8 +76,8 @@ jobs:
           --arg dur "${DURATION}s" \
           --arg container "wa-gateway-api" \
           --arg branch "production" \
-          --arg msg "$COMMIT_MSG" \
-          --arg sha "${{ env.SHORT_SHA }}" \
+          --arg msg "$COMMIT_TITLE" \
+          --arg sha "$SHORT_SHA" \
           --arg actor "${{ github.actor }}" \
           '{
             embeds: [{
@@ -95,8 +95,6 @@ jobs:
 
     - name: Notify Discord (Error)
       if: failure()
-      env:
-        COMMIT_MSG: ${{ github.event.head_commit.message }}
       run: |
         END_TIME=$(TZ='Asia/Jakarta' date +'%H:%M WIB %d/%m/%Y')
         END_TS=$(date +%s)
@@ -109,8 +107,8 @@ jobs:
           --arg dur "${DURATION}s" \
           --arg container "wa-gateway-api" \
           --arg branch "production" \
-          --arg msg "$COMMIT_MSG" \
-          --arg sha "${{ env.SHORT_SHA }}" \
+          --arg msg "$COMMIT_TITLE" \
+          --arg sha "$SHORT_SHA" \
           --arg actor "${{ github.actor }}" \
           '{
             embeds: [{
