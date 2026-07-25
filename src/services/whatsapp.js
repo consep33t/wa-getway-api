@@ -16,8 +16,41 @@ const updateStatus = (status) => {
   sessionEvents.emit('status_changed', status);
 };
 
+const cleanChromiumLocks = () => {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const sessionDir = path.join(process.cwd(), 'sessions');
+    if (!fs.existsSync(sessionDir)) return;
+    
+    // Find all Singleton* files recursively and delete them
+    const deleteLocks = (dir) => {
+      const files = fs.readdirSync(dir);
+      for (const file of files) {
+        const filePath = path.join(dir, file);
+        if (fs.statSync(filePath).isDirectory()) {
+          deleteLocks(filePath);
+        } else if (file.startsWith('Singleton')) {
+          try {
+            fs.unlinkSync(filePath);
+            logger.info(`Deleted chromium lock file: ${filePath}`);
+          } catch (e) {
+            logger.error(`Failed to delete lock file: ${filePath}`, { error: e.message });
+          }
+        }
+      }
+    };
+    
+    deleteLocks(sessionDir);
+  } catch (err) {
+    logger.error('Error during Chromium lock cleanup', { error: err.message });
+  }
+};
+
 const initializeClient = () => {
   logger.info('Initializing WhatsApp Client...');
+  
+  cleanChromiumLocks();
 
   client = new Client({
     authStrategy: new LocalAuth({ dataPath: 'sessions' }),
