@@ -59,22 +59,20 @@ jobs:
 
     - name: Executing Remote SSH Commands for Deployment
       id: ssh-deploy
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        
-        cat << 'EOF' > ~/.ssh/config
-        Host target
-          HostName 100.99.177.48
-          User ${{ secrets.SERVER_USERNAME }}
-          Port ${{ secrets.SERVER_PORT || '22' }}
-          StrictHostKeyChecking no
-          UserKnownHostsFile /dev/null
-          ConnectTimeout 15
-        EOF
-        
-        ssh -vvv target "set -e; cd /home/${{ secrets.SERVER_USERNAME }}/wa-gateway-api; git fetch origin; git reset --hard origin/production; docker compose build; docker compose down; docker compose up -d"
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: 100.99.177.48
+        username: ${{ secrets.SERVER_USERNAME }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        port: ${{ secrets.SERVER_PORT || '22' }}
+        script: |
+          set -e
+          cd /home/${{ secrets.SERVER_USERNAME }}/wa-gateway-api
+          git fetch origin
+          git reset --hard origin/production
+          docker compose build
+          docker compose down
+          docker compose up -d
 
     - name: Notify Discord (Success)
       if: success()
