@@ -25,10 +25,22 @@ const cleanChromiumLocks = () => {
     
     // Find all Singleton* files recursively and delete them
     const deleteLocks = (dir) => {
-      const files = fs.readdirSync(dir);
+      let files;
+      try {
+        files = fs.readdirSync(dir);
+      } catch (e) {
+        return;
+      }
       for (const file of files) {
         const filePath = path.join(dir, file);
-        if (fs.statSync(filePath).isDirectory()) {
+        let isDir = false;
+        try {
+          isDir = fs.lstatSync(filePath).isDirectory();
+        } catch (e) {
+          // If lstat fails (e.g. extremely broken symlink), just assume not a dir
+        }
+        
+        if (isDir) {
           deleteLocks(filePath);
         } else if (file.startsWith('Singleton')) {
           try {
