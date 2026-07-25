@@ -50,20 +50,12 @@ jobs:
       with:
         authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
         
-    - name: Resolve Target IP
-      id: resolve-ip
+    - name: Wake up Tailscale Tunnel
       run: |
-        echo "Waiting for Tailscale connection to stabilize..."
-        sleep 5
-        # Try to resolve Tailscale IP if SERVER_HOST is a Tailscale hostname
-        # If it fails, fallback to the original SERVER_HOST
-        TS_IP=$(tailscale status --json | jq -r '.Peer[] | select(.HostName == "${{ secrets.SERVER_HOST }}" or .DNSName | startswith("${{ secrets.SERVER_HOST }}.")) | .TailscaleIPs[0]' || echo "")
-        if [ -z "$TS_IP" ] || [ "$TS_IP" = "null" ]; then
-          echo "Could not resolve Tailscale IP for ${{ secrets.SERVER_HOST }}, falling back to original."
-          TS_IP="${{ secrets.SERVER_HOST }}"
-        fi
-        echo "Resolved IP: $TS_IP"
-        echo "TARGET_IP=$TS_IP" >> $GITHUB_ENV
+        echo "Waking up tunnel to 100.99.177.48..."
+        tailscale ping 100.99.177.48 || true
+        ping -c 5 100.99.177.48 || true
+        nc -zv 100.99.177.48 22 || true
 
     - name: Executing Remote SSH Commands for Deployment
       id: ssh-deploy
@@ -74,12 +66,12 @@ jobs:
         
         cat << 'EOF' > ~/.ssh/config
         Host target
-          HostName ${{ env.TARGET_IP }}
+          HostName 100.99.177.48
           User ${{ secrets.SERVER_USERNAME }}
           Port ${{ secrets.SERVER_PORT || '22' }}
           StrictHostKeyChecking no
           UserKnownHostsFile /dev/null
-          ConnectTimeout 10
+          ConnectTimeout 15
         EOF
         
         ssh -vvv target "set -e; cd /home/${{ secrets.SERVER_USERNAME }}/wa-gateway-api; git fetch origin; git reset --hard origin/production; docker compose build; docker compose down; docker compose up -d"
