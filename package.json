@@ -30,6 +30,7 @@
     "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",
     "swagger-jsdoc": "^6.3.0",
+    "swagger-themes": "^1.4.3",
     "swagger-ui-express": "^5.0.1",
     "whatsapp-web.js": "^1.34.7",
     "winston": "^3.19.0",

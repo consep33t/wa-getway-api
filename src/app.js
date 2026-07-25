@@ -38,9 +38,34 @@ const apiLimiter = rateLimit({
 // Apply rate limiter to all requests
 app.use('/', apiLimiter);
 
-// Swagger Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+// Swagger Documentation Theme Controller
+const { SwaggerTheme, SwaggerThemeNameEnum } = require('swagger-themes');
+const theme = new SwaggerTheme();
+const { customCss, customJs } = require('./utils/swagger-theme-injector');
 
+// Theme CSS provider endpoint
+app.get('/api-docs/theme/:themeName', (req, res) => {
+  const t = req.params.themeName.toLowerCase();
+  let css = '';
+  switch(t) {
+    case 'dark': css = theme.getBuffer(SwaggerThemeNameEnum.DARK); break;
+    case 'nord': css = theme.getBuffer(SwaggerThemeNameEnum.NORD_DARK); break;
+    case 'dracula': css = theme.getBuffer(SwaggerThemeNameEnum.DRACULA); break;
+    case 'light': css = theme.getBuffer(SwaggerThemeNameEnum.CLASSIC); break;
+    default: css = theme.getBuffer(SwaggerThemeNameEnum.DARK);
+  }
+  res.setHeader('Content-Type', 'text/css');
+  res.send(css);
+});
+
+// Serve Swagger with initial professional UI enhancements and custom JS
+const swaggerOptions = {
+  customCss: customCss + theme.getBuffer(SwaggerThemeNameEnum.DARK),
+  customJsStr: customJs,
+  customSiteTitle: "WA Gateway API Docs",
+};
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, swaggerOptions));
 /**
  * @swagger
  * /health:
