@@ -50,11 +50,26 @@ jobs:
       with:
         authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
         
+    - name: Resolve Target IP
+      id: resolve-ip
+      run: |
+        echo "Waiting for Tailscale connection to stabilize..."
+        sleep 5
+        # Try to resolve Tailscale IP if SERVER_HOST is a Tailscale hostname
+        # If it fails, fallback to the original SERVER_HOST
+        TS_IP=$(tailscale status --json | jq -r '.Peer[] | select(.HostName == "${{ secrets.SERVER_HOST }}" or .DNSName | startswith("${{ secrets.SERVER_HOST }}.")) | .TailscaleIPs[0]' || echo "")
+        if [ -z "$TS_IP" ] || [ "$TS_IP" = "null" ]; then
+          echo "Could not resolve Tailscale IP for ${{ secrets.SERVER_HOST }}, falling back to original."
+          TS_IP="${{ secrets.SERVER_HOST }}"
+        fi
+        echo "Resolved IP: $TS_IP"
+        echo "TARGET_IP=$TS_IP" >> $GITHUB_ENV
+
     - name: Executing Remote SSH Commands for Deployment
       id: ssh-deploy
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: ${{ secrets.SERVER_HOST }}
+        host: ${{ env.TARGET_IP }}
         username: ${{ secrets.SERVER_USERNAME }}
         key: ${{ secrets.SERVER_SSH_KEY }}
         port: ${{ secrets.SERVER_PORT || '22' }}
