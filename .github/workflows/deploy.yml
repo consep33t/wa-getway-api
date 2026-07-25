@@ -69,7 +69,7 @@ jobs:
     - name: Executing Remote SSH Commands for Deployment
       id: ssh-deploy
       run: |
-        ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USERNAME }}@100.99.177.48 "set -e; cd /home/${{ secrets.SERVER_USERNAME }}/wa-gateway-api; git fetch origin; git reset --hard origin/production; docker compose build; docker compose down; docker compose up -d"
+        ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null alfa@100.99.177.48 "set -e; cd /home/alfa/wa-gateway-api; git fetch origin; git reset --hard origin/production; docker compose build; docker compose down; docker compose up -d"
 
     - name: Notify Discord (Success)
       if: success()
