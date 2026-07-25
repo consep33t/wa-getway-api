@@ -34,10 +34,10 @@ jobs:
             username: "GitHub Actions CI",
             avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
             embeds: [{
-              author: { name: $actor, icon_url: ("https://github.com/" + $actor + ".png") },
+              author: { name: $actor, icon_url: "https://github.com/\($actor).png" },
               title: "🚀 Backend Auto-Deploy Started",
-              url: ("https://github.com/" + $repo + "/actions/runs/" + $run_id),
-              description: "**Commit:** [`" + $sha + "`](https://github.com/" + $repo + "/commit/" + $sha + ")\n**Message:** " + $msg + "\n\n🏗️ Building and recreating container...",
+              url: "https://github.com/\($repo)/actions/runs/\($run_id)",
+              description: "**Commit:** [`\($sha)`](https://github.com/\($repo)/commit/\($sha))\n**Message:** \($msg)\n\n🏗️ Building and recreating container...",
               color: 16753920,
               fields: [
                 { name: "📦 Service", value: "`wa-gateway-api`", inline: true },
@@ -85,15 +85,15 @@ jobs:
             username: "GitHub Actions CI",
             avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
             embeds: [{
-              author: { name: $actor, icon_url: ("https://github.com/" + $actor + ".png") },
+              author: { name: $actor, icon_url: "https://github.com/\($actor).png" },
               title: "✅ Backend Auto-Deploy Successful",
-              url: ("https://github.com/" + $repo + "/actions/runs/" + $run_id),
-              description: "**Commit:** [`" + $sha + "`](https://github.com/" + $repo + "/commit/" + $sha + ")\n**Message:** " + $msg + "\n\n✨ Service is now running perfectly!",
+              url: "https://github.com/\($repo)/actions/runs/\($run_id)",
+              description: "**Commit:** [`\($sha)`](https://github.com/\($repo)/commit/\($sha))\n**Message:** \($msg)\n\n✨ Service is now running perfectly!",
               color: 3066993,
               fields: [
                 { name: "📦 Service", value: "`wa-gateway-api`", inline: true },
                 { name: "🌿 Branch", value: "`production`", inline: true },
-                { name: "⏱️ Duration", value: ("`" + $dur + "`"), inline: true }
+                { name: "⏱️ Duration", value: "`\($dur)`", inline: true }
               ],
               footer: { text: "CI/CD Pipeline Success", icon_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" },
               timestamp: $time
@@ -120,15 +120,15 @@ jobs:
             username: "GitHub Actions CI",
             avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
             embeds: [{
-              author: { name: $actor, icon_url: ("https://github.com/" + $actor + ".png") },
+              author: { name: $actor, icon_url: "https://github.com/\($actor).png" },
               title: "❌ Backend Auto-Deploy Failed",
-              url: ("https://github.com/" + $repo + "/actions/runs/" + $run_id),
-              description: "**Commit:** [`" + $sha + "`](https://github.com/" + $repo + "/commit/" + $sha + ")\n**Message:** " + $msg + "\n\n⚠️ Deployment encountered a fatal error. Please check the logs.",
+              url: "https://github.com/\($repo)/actions/runs/\($run_id)",
+              description: "**Commit:** [`\($sha)`](https://github.com/\($repo)/commit/\($sha))\n**Message:** \($msg)\n\n⚠️ Deployment encountered a fatal error. Please check the logs.",
               color: 15158332,
               fields: [
                 { name: "📦 Service", value: "`wa-gateway-api`", inline: true },
                 { name: "🌿 Branch", value: "`production`", inline: true },
-                { name: "⏱️ Duration", value: ("`" + $dur + "`"), inline: true }
+                { name: "⏱️ Duration", value: "`\($dur)`", inline: true }
               ],
               footer: { text: "CI/CD Pipeline Failed", icon_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" },
               timestamp: $time
