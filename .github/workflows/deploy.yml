@@ -63,15 +63,15 @@ jobs:
         ping -c 5 100.99.177.48 || true
         nc -zv 100.99.177.48 22 || true
 
-    - name: Set up SSH Key
-      uses: webfactory/ssh-agent@v0.9.0
-      with:
-        ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
-
-    - name: Executing Remote SSH Commands for Deployment
-      id: ssh-deploy
+    - name: Trigger Deployment Webhook
       run: |
-        ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null alfa@100.99.177.48 "set -e; cd /home/alfa/wa-gateway-api; git fetch origin; git reset --hard origin/production; docker compose build; docker compose down; docker compose up -d"
+        HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST -d 'WaGatewaySuperSecretDeployToken2026' http://100.99.177.48:9000/deploy)
+        if [ "$HTTP_STATUS" -eq 200 ]; then
+          echo "Deployment triggered successfully!"
+        else
+          echo "Failed to trigger deployment. HTTP Status: $HTTP_STATUS"
+          exit 1
+        fi
 
     - name: Notify Discord (Success)
       if: success()
